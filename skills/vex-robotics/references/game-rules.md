@@ -105,7 +105,8 @@ A critical component judged for awards like Excellence and Design:
 ## Common Field Positions
 
 ### Scouting Terminology
-- **In-Match Rating (IMR)**: Average points scored per match
+- **OPR (Offensive Power Rating)**: Average contribution of a single robot to the alliance score per match (derived stat; higher = better)
+- **DP (Defensive Pressure)**: Estimated negative impact on opponent scoring (useful for alliance selection against top teams)
 - **Autonomous Routine**: Team's pre-programmed 15-second sequence
 - **High Goal / Low Goal**: Different scoring targets at different point values
 - **Neutral Zone**: Central area often contested by both alliances
