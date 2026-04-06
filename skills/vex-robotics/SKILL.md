@@ -17,6 +17,10 @@ Provide expert, hands-on guidance for VEX Robotics Competition teams across prog
 
 Load the relevant reference file(s) when the task involves that domain. For broad questions, load all three.
 
+> ⚠️ **VEX game rules change every year.** Always cross-reference official information at
+> [vexrobotics.com](https://www.vexrobotics.com) and [robotevents.com](https://www.robotevents.com)
+> for the current season's game manual, field specs, and qualification criteria.
+
 ---
 
 ## Core Workflows
