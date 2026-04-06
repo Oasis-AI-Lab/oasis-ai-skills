@@ -42,9 +42,9 @@ LeftMotor.spin(forward, 80, pct);
 RightMotor.spin(forward, 80, pct);
 
 // Stop motor
-LeftMotor.stop(brake);     // hold position
-LeftMotor.stop(coast);     // free spin
-LeftMotor.stop(hold);      // motor holds actively
+LeftMotor.stop(brake);  // short-circuit coils, quick stop (no active hold)
+LeftMotor.stop(coast);  // cut power, free spin
+LeftMotor.stop(hold);   // active PID to maintain position (draws current)
 
 // Move specific distance (blocking)
 LeftMotor.spinFor(forward, 360, degrees, false); // non-blocking
@@ -138,22 +138,27 @@ void autonomous() {
 ### Encoder-Based Driving (More Accurate)
 
 ```cpp
+// Adjust WHEEL_CIRCUMFERENCE_CM for your actual wheel size
+// Common values: 4" wheel = 10.21 cm, 3.25" wheel = 8.25 cm
+const double WHEEL_CIRCUMFERENCE_CM = 10.21;
+
 void driveInches(double inches, int speed) {
-  double wheelCircumference = 10.21; // cm, adjust for wheel size
-  double degreesNeeded = (inches * 2.54 / wheelCircumference) * 360;
+  double degreesNeeded = (inches * 2.54 / WHEEL_CIRCUMFERENCE_CM) * 360;
   
+  LeftMotor.setVelocity(speed, pct);
+  RightMotor.setVelocity(speed, pct);
   LeftMotor.resetPosition();
   RightMotor.resetPosition();
   LeftMotor.spinFor(forward, degreesNeeded, degrees, false);
   RightMotor.spinFor(forward, degreesNeeded, degrees);
 }
 
-void turnDegrees(double degrees, int speed) {
-  // Track width based calculation or use inertial sensor
+// NOTE: targetDeg is renamed to avoid shadowing the VEX SDK 'degrees' enum
+void turnDegrees(double targetDeg, int speed) {
   InertialSensor.resetRotation();
   LeftMotor.spin(forward, speed, pct);
   RightMotor.spin(reverse, speed, pct);
-  while (fabs(InertialSensor.rotation(degrees)) < fabs(degrees)) {
+  while (fabs(InertialSensor.rotation(degrees)) < fabs(targetDeg)) {
     wait(10, msec);
   }
   LeftMotor.stop(brake);
@@ -165,20 +170,26 @@ void turnDegrees(double degrees, int speed) {
 
 ```cpp
 // Simple PID for straight driving
+// Requires WHEEL_CIRCUMFERENCE_CM to be defined (see Encoder-Based Driving above)
 void pidDrive(double targetInches) {
   double kP = 0.5, kI = 0.001, kD = 0.2;
   double error, prevError = 0, integral = 0, derivative;
-  double targetDeg = targetInches * 360 / wheelCirc;
+  const double INTEGRAL_LIMIT = 50.0; // anti-windup clamp
+  double targetDeg = (targetInches * 2.54 / WHEEL_CIRCUMFERENCE_CM) * 360;
   
   LeftMotor.resetPosition();
   
   while (true) {
     error = targetDeg - LeftMotor.position(degrees);
+    
+    // Anti-windup: clamp integral to prevent runaway accumulation
     integral += error;
+    integral = fmax(-INTEGRAL_LIMIT, fmin(INTEGRAL_LIMIT, integral));
+    
     derivative = error - prevError;
     
     double power = kP * error + kI * integral + kD * derivative;
-    power = fmax(-100, fmin(100, power)); // Clamp to [-100, 100]
+    power = fmax(-100, fmin(100, power)); // Clamp output to [-100, 100]
     
     LeftMotor.spin(forward, power, pct);
     RightMotor.spin(forward, power, pct);
@@ -250,9 +261,11 @@ void usercontrol() {
     int leftSpeed  = forwardBack + leftRight;
     int rightSpeed = forwardBack - leftRight;
     
-    // Clamp values
-    leftSpeed  = fmax(-100, fmin(100, leftSpeed));
-    rightSpeed = fmax(-100, fmin(100, rightSpeed));
+    // Clamp values (use integer arithmetic, not fmax/fmin which return double)
+    if (leftSpeed  >  100) leftSpeed  =  100;
+    if (leftSpeed  < -100) leftSpeed  = -100;
+    if (rightSpeed >  100) rightSpeed =  100;
+    if (rightSpeed < -100) rightSpeed = -100;
     
     LeftMotor.spin(forward, leftSpeed, pct);
     RightMotor.spin(forward, rightSpeed, pct);

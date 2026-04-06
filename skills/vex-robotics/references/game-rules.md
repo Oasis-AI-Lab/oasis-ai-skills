@@ -19,7 +19,7 @@
 - **Game changes every year** — always verify the current season's game manual
 
 ### Match Format
-Each match (2 minutes 30 seconds total):
+Each match (2 minutes total):
 1. **Autonomous Period** (15 seconds): Pre-programmed only, no driver input
 2. **Driver-Controlled Period** (1 minute 45 seconds): Drivers control robots via joysticks
 3. **Alliances**: Two robots per alliance (Red vs. Blue), 4 teams total per match

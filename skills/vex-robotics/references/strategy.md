@@ -96,6 +96,8 @@ Teams should choose between:
 Many teams program multiple autonomous routines and select via controller at match start:
 ```cpp
 // In autonomous()
+// IMPORTANT: The driver must be HOLDING the button at the moment autonomous
+// begins (during the pre-match countdown). Pressing after auton starts is too late.
 if (Controller1.ButtonA.pressing()) { routine_red_side(); }
 else if (Controller1.ButtonX.pressing()) { routine_blue_side(); }
 else { default_routine(); }
