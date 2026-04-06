@@ -41,13 +41,24 @@ Weights can be applied to columns based on team priorities.
 | H-Drive (3-axis) | Strafes with center wheel | Maintenance | Moderate agility |
 | 6-motor tank | Maximum pushing force | Uses many motor ports | Defense-heavy games |
 
-### Gear Ratios for Drive (VEX V5 Green 200RPM cartridge)
-- **200 RPM direct**: ~1.7 m/s — Best for heavy robots needing torque
-- **3:5 ratio (~333 RPM)**: ~2.8 m/s — Good balance
-- **1:2 ratio (400 RPM)**: ~3.4 m/s — Fast but less torque
-- **3:7 ratio (~467 RPM)**: ~4.0 m/s — High-speed drives
+### Gear Ratios for Drive (VEX V5 Smart Motor)
 
-Rule of thumb: 4" wheels on ~333RPM gives reliable competition performance.
+Speed formula: `RPM × π × wheel_diameter_inches × 2.54 cm/in ÷ 60 = m/s`
+Base: 4" (102 mm) wheel → circumference ≈ 31.9 cm
+
+| Cartridge | Motor RPM | 4" Wheel Speed | Best For |
+|-----------|-----------|---------------|----------|
+| **Green** | 200 RPM | **~1.06 m/s** | Heavy defense robots, high-push-force drives |
+| **Blue** | 600 RPM | **~3.19 m/s** | Scoring-focused robots, fast manipulators |
+| **Red** | 100 RPM | **~0.53 m/s** | High-torque lifts, arms, mechanisms (not drives) |
+
+> The original table listed ~1.7 m/s for 200RPM — that was incorrect.
+> Actual: 200 × 31.9 ÷ 60 ≈ 1.06 m/s (based on direct-drive 4" wheels).
+> The ~333 RPM row used a different (non-standard) internal gear ratio assumption.
+
+Rule of thumb for VRC drives:
+- **200 RPM Green** = reliable pushing power, slower cycle time
+- **600 RPM Blue** = fast cycles, but noticeably less push force — avoid on defense-heavy bots
 
 ### Intake Mechanisms
 - **Roller intake**: High volume, continuous — ideal for ball/ring games

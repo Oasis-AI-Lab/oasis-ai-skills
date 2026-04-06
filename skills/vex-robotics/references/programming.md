@@ -154,11 +154,17 @@ void driveInches(double inches, int speed) {
 }
 
 // NOTE: targetDeg is renamed to avoid shadowing the VEX SDK 'degrees' enum
+// NOTE: add #include <algorithm> at the top of your file for std::max / std::min
 void turnDegrees(double targetDeg, int speed) {
   InertialSensor.resetRotation();
   LeftMotor.spin(forward, speed, pct);
   RightMotor.spin(reverse, speed, pct);
-  while (fabs(InertialSensor.rotation(degrees)) < fabs(targetDeg)) {
+
+  const int MAX_TURN_ITERATIONS = 300; // ~3 seconds max — prevents infinite loop if gyro fails
+  int iterations = 0;
+  while (iterations < MAX_TURN_ITERATIONS) {
+    if (fabs(InertialSensor.rotation(degrees)) >= fabs(targetDeg)) break;
+    iterations++;
     wait(10, msec);
   }
   LeftMotor.stop(brake);
@@ -175,32 +181,40 @@ void pidDrive(double targetInches) {
   double kP = 0.5, kI = 0.001, kD = 0.2;
   double error, prevError = 0, integral = 0, derivative;
   const double INTEGRAL_LIMIT = 50.0; // anti-windup clamp
+  const int    MAX_ITERATIONS  = 500; // timeout guard: 500 × 20 ms = 10 s max
   double targetDeg = (targetInches * 2.54 / WHEEL_CIRCUMFERENCE_CM) * 360;
-  
+
   LeftMotor.resetPosition();
-  
-  while (true) {
-    error = targetDeg - LeftMotor.position(degrees);
-    
+  RightMotor.resetPosition();
+  int iterations = 0;
+
+  while (iterations < MAX_ITERATIONS) {
+    // Use average of both motors for feedback — compensates for one-sided drift
+    double avgPos = (LeftMotor.position(degrees) + RightMotor.position(degrees)) / 2.0;
+    error = targetDeg - avgPos;
+
     // Anti-windup: clamp integral to prevent runaway accumulation
     integral += error;
     integral = fmax(-INTEGRAL_LIMIT, fmin(INTEGRAL_LIMIT, integral));
-    
+
     derivative = error - prevError;
-    
+
     double power = kP * error + kI * integral + kD * derivative;
     power = fmax(-100, fmin(100, power)); // Clamp output to [-100, 100]
-    
+
     LeftMotor.spin(forward, power, pct);
     RightMotor.spin(forward, power, pct);
-    
+
     prevError = error;
-    if (fabs(error) < 5) break; // Within tolerance
+    if (fabs(error) < 5) break; // Within tolerance — exit early
+    iterations++;
     wait(20, msec);
   }
+  // Timeout exit: robot is stuck or sensor failed — stop to avoid spinning forever
   LeftMotor.stop(brake);
   RightMotor.stop(brake);
 }
+```
 ```
 
 ### State Machine Autonomous
@@ -370,6 +384,50 @@ def user_control():
 
 comp = Competition(user_control, autonomous)
 ```
+
+### Python PID Drive (Micropython)
+
+```python
+from vex import *
+
+WHEEL_CIRCUMFERENCE_CM = 10.21  # adjust for your wheel size
+INTEGRAL_LIMIT = 50.0
+MAX_ITERATIONS = 500
+
+def pid_drive(inches, speed=70):
+    """PID-controlled straight drive in Python (Micropython on VEX V5)."""
+    target_deg = (inches * 2.54 / WHEEL_CIRCUMFERENCE_CM) * 360
+    kP, kI, kD = 0.5, 0.001, 0.2
+    integral, prev_error = 0, 0
+
+    left_motor.reset_position()
+    right_motor.reset_position()
+
+    for _ in range(MAX_ITERATIONS):
+        avg_pos = (left_motor.position(DEGREES) + right_motor.position(DEGREES)) / 2.0
+        error = target_deg - avg_pos
+
+        integral = max(-INTEGRAL_LIMIT, min(INTEGRAL_LIMIT, integral + error))
+        derivative = error - prev_error
+
+        power = kP * error + kI * integral + kD * derivative
+        power = max(-100.0, min(100.0, power))
+
+        left_motor.spin(FORWARD, power, PERCENT)
+        right_motor.spin(FORWARD, power, PERCENT)
+
+        prev_error = error
+        if abs(error) < 5:
+            break
+        wait(20, MSEC)
+
+    left_motor.stop(BRAKE)
+    right_motor.stop(BRAKE)
+```
+
+> **Note:** Python PID runs noticeably slower than C++ due to interpreter overhead.
+> For competition-level performance, use the C++ PID above. Python is best for
+> learning, prototyping, or simpler timed-based autonomous routines.
 
 ---
 
